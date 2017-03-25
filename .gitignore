@@ -22,3 +22,9 @@ build/
 *~
 lib/
 
+.DS_Store
+Examples/Monocular/mono_nexar
+Examples/Monocular/mono_nexar_mac
+Thirdparty/*/build*
+build_*
+data/
