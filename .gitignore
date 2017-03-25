@@ -28,3 +28,4 @@ Examples/Monocular/mono_nexar_mac
 Thirdparty/*/build*
 build_*
 data/
+.*project

@@ -1056,6 +1056,25 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
     ComputeKeyPointsOctTree(allKeypoints);
     //ComputeKeyPointsOld(allKeypoints);
 
+    // TODO Yang: prune the features based on the mask
+    if(!_mask.empty()){
+        cv::Mat mask = _mask.getMat();
+        for(int i=0; i<nlevels; ++i){
+            vector<KeyPoint> filtered;
+            vector<KeyPoint>& keypoints = allKeypoints[i];
+            float scale = mvScaleFactor[i];
+            for(unsigned int j=0; j<keypoints.size(); ++j){
+                int loc_x = int(keypoints[j].pt.x*scale);
+                int loc_y = int(keypoints[j].pt.y*scale);
+
+                if(mask.at<unsigned char>(loc_y, loc_x) > 0)
+                    filtered.push_back(keypoints[j]);
+            }
+            allKeypoints[i] = filtered;
+        }
+    }
+    // end of masking
+
     Mat descriptors;
 
     int nkeypoints = 0;
@@ -1102,6 +1121,7 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
         // And add the keypoints to the output
         _keypoints.insert(_keypoints.end(), keypoints.begin(), keypoints.end());
     }
+
 }
 
 void ORBextractor::ComputePyramid(cv::Mat image)

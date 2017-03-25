@@ -37,11 +37,28 @@ using namespace std;
 void LoadImages(const string &strSequence, vector<string> &vstrImageFilenames,
                 vector<double> &vTimestamps);
 
+
+template<typename Out>
+void split(const std::string &s, char delim, Out result) {
+    std::stringstream ss;
+    ss.str(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        *(result++) = item;
+    }
+}
+
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, std::back_inserter(elems));
+    return elems;
+}
+
 int main(int argc, char **argv)
 {
-    if(argc != 5)
+    if(argc != 6)
     {
-        cerr << endl << "Usage: ./mono_nexar path_to_vocabulary path_to_settings path_to_sequence use_viewer" << endl;
+        cerr << endl << "Usage: ./mono_nexar path_to_vocabulary path_to_settings path_to_sequence use_viewer mask_relative" << endl;
         return 1;
     }
 
@@ -69,6 +86,28 @@ int main(int argc, char **argv)
     {
         // Read image from file
         im = cv::imread(vstrImageFilenames[ni],CV_LOAD_IMAGE_UNCHANGED);
+
+        std::string mask_relative = argv[5];
+        cv::Mat mask;
+        if(mask_relative != "none"){
+            // reading the mask in as well
+            std::string image_path = vstrImageFilenames[ni];
+            // from the relative path to mask path
+            auto splits = split(image_path, '/');
+            while(splits.back().empty())
+                splits.pop_back();
+
+            std::string mask_path;
+            for(int i=0; i<splits.size()-1; ++i)
+                mask_path += splits[i] + "/";
+            auto file_splits = split(splits.back(), '.');
+            mask_path += mask_relative + "/" + file_splits[0] + ".png";
+
+             mask= cv::imread(mask_path, CV_LOAD_IMAGE_GRAYSCALE);
+            // end of reading the mask
+        }
+
+
         double tframe = vTimestamps[ni];
 
         if(im.empty())
@@ -84,7 +123,7 @@ int main(int argc, char **argv)
 #endif
 
         // Pass the image to the SLAM system
-        SLAM.TrackMonocular(im,tframe);
+        SLAM.TrackMonocular(im,tframe, mask);
 
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
