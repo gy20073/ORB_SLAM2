@@ -31,6 +31,9 @@
 #include<opencv2/core/core.hpp>
 
 #include"System.h"
+#include <dirent.h>
+#include<vector>
+#include <string>
 
 using namespace std;
 
@@ -171,10 +174,30 @@ inline bool exists_test3 (const std::string& name) {
   return (stat (name.c_str(), &buffer) == 0); 
 }
 
+vector<string> get_all_files(string root_dir){
+    vector<string> ans;
+
+    DIR *dir;
+    struct dirent *ent;
+    if ((dir = opendir (root_dir.c_str())) != NULL) {
+      /* print all the files and directories within directory */
+      while ((ent = readdir (dir)) != NULL) {
+        ans.push_back(root_dir + "/" + ent->d_name);
+      }
+      closedir (dir);
+    } else {
+        // bad dir
+        printf("bad dir\n");
+    }
+    sort(ans.begin(), ans.end());
+    return ans;
+}
+
 void LoadImages(const string &strPathToSequence, vector<string> &vstrImageFilenames, vector<double> &vTimestamps)
 {
     const double interval = 1.0 / 30;
 
+    /*
     // loop over all images
     int image_id = 0;
     while (1){
@@ -189,6 +212,18 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageFilena
         	break;
         }
     }
+    */
+    vector<string> all = get_all_files(strPathToSequence);
+
+    for(int i=0; i<all.size(); ++i){
+        string name = all[i];
+        transform(name.begin(), name.end(), name.begin(), ::tolower);
+        int len = name.size();
+        if(name.substr(len-3)=="png" || name.substr(len-3)=="jpg" || name.substr(len-4)=="jpeg"){
+            vstrImageFilenames.push_back(all[i]);
+        }
+    }
+    int image_id = vstrImageFilenames.size();
     
     for(int i=0; i<image_id; ++i){
     	vTimestamps.push_back(i*interval);
